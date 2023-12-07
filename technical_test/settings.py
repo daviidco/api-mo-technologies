@@ -89,6 +89,7 @@ WSGI_APPLICATION = 'technical_test.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Local Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -100,16 +101,17 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'loands-db', #change it databasename
-#         'USER': 'usertest', #change it database user name
-#         'PASSWORD': 'mypass', # change user database password
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+# Docker Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'loands-db', #change it databasename
+        'USER': 'usertest', #change it database user name
+        'PASSWORD': 'mypass', # change user database password
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 
 
 
