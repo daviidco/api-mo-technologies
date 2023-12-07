@@ -20,6 +20,11 @@ services:
       context: .
       dockerfile: ./Dockerfile
 
+    environment:
+      - DJANGO_SUPERUSER_USERNAME=user
+      - DJANGO_SUPERUSER_EMAIL=user@ejemplo.com
+      - DJANGO_SUPERUSER_PASSWORD=password
+
     volumes:
       - ./static:/app/static
 

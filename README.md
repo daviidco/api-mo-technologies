@@ -49,6 +49,13 @@ To stop and remove the services, volumes, and networks created by Docker Compose
 docker-compose down --volumes
 ```
 
+4. Login in admin site http://0.0.0.0:8080/swagger  
+```bash
+user: user
+password: password
+```
+The credentials are specicy at docker-compose.yaml as environment vars and there are executed from entrypoint.sh
+
 ----------
 ### ⚙️ Configure Api
 
