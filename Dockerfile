@@ -11,19 +11,18 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Ejecuta las migraciones cuando se inicie el contenedor
-COPY entrypoint.sh /usr/src/app/entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
-
-
 # Copia el resto de la aplicación al contenedor
 COPY . /app/
 
+# Ejecuta las migraciones cuando se inicie el contenedor
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Expone el puerto en el que se ejecuta la aplicación Django
-EXPOSE 8001
+EXPOSE 8080
 
 # Ejecuta la aplicación Django
 #CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8001/redoc", "--workers", "4", "technical_test.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "technical_test.wsgi:application"]
 
 
