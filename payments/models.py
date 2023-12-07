@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -18,25 +17,30 @@ class Payment(models.Model):
         (STATUS_REJECTED, "rejected"),
     ]
 
-
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     external_id = models.CharField(max_length=60, unique=True)
     total_amount = models.DecimalField(max_digits=20, decimal_places=10)
-    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=STATUS_COMPLETED, editable=True)
+    status = models.SmallIntegerField(
+        choices=STATUS_CHOICES, default=STATUS_COMPLETED, editable=True
+    )
     paid_at = models.DateTimeField(auto_now_add=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments')
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name="payments"
+    )
 
     def save(self, *args, **kwargs):
         # Validar si el cliente tiene préstamos activos
         if not self.customer.loans.filter(status=2).exists():
-            raise CustomAPIException(detail='El cliente no tiene préstamos activos.')
+            raise CustomAPIException(detail="El cliente no tiene préstamos activos.")
 
         # Validar que el pago no exceda el monto de la deuda total
         total_outstanding = get_total_outstanding(self.customer)
         if self.total_amount > total_outstanding:
-            raise CustomAPIException(detail='El monto del pago excede la deuda del cliente.')
+            raise CustomAPIException(
+                detail="El monto del pago excede la deuda del cliente."
+            )
 
         # Validar que el pago no exceda el monto del prestamo
         # total_outstanding = get_total_outstanding(self.customer)
@@ -47,11 +51,10 @@ class Payment(models.Model):
             # Generar un nuevo external_id solo si no se proporciona
             last_payment = self.customer.payments.count()
             last_number = last_payment + 1
-            customer_number = self.customer.external_id.split('_')[1]
-            self.external_id = f'external_{customer_number}_{last_number:02}'
+            customer_number = self.customer.external_id.split("_")[1]
+            self.external_id = f"external_{customer_number}_{last_number:02}"
 
         super().save(*args, **kwargs)
-
 
 
 class PaymentDetail(models.Model):
@@ -90,6 +93,7 @@ class PaymentDetail(models.Model):
     def payment_amount(self):
         return self.amount
 
+
 @receiver(pre_save, sender=PaymentDetail)
 def handle_check_(sender, instance, **kwargs):
     future_outstanding = instance.loan.outstanding - instance.amount
@@ -110,5 +114,7 @@ def handle_rejected_payment(sender, instance, **kwargs):
         for detail in payment_details:
             # Actualizar el 'outstanding' del préstamo
             detail.loan.outstanding += detail.amount
-            detail.loan.status = Loan.STATUS_ACTIVE  # Opcional: cambiar el estado a "active"
+            detail.loan.status = (
+                Loan.STATUS_ACTIVE
+            )  # Opcional: cambiar el estado a "active"
             detail.loan.save()

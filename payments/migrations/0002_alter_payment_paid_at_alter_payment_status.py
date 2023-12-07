@@ -4,20 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('payments', '0001_initial'),
+        ("payments", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='payment',
-            name='paid_at',
+            model_name="payment",
+            name="paid_at",
             field=models.DateTimeField(auto_now_add=True),
         ),
         migrations.AlterField(
-            model_name='payment',
-            name='status',
-            field=models.SmallIntegerField(choices=[(1, 'completed'), (2, 'rejected')], default=1),
+            model_name="payment",
+            name="status",
+            field=models.SmallIntegerField(
+                choices=[(1, "completed"), (2, "rejected")], default=1
+            ),
         ),
     ]

@@ -33,15 +33,17 @@ class LoanViewSet(viewsets.ModelViewSet):
         # self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         response_data = {
-            'message': 'Préstamo creado exitosamente',
-            'data': serializer.data
+            "message": "Préstamo creado exitosamente",
+            "data": serializer.data,
         }
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
-    @action(detail=True, methods=['PATCH'])
+    @action(detail=True, methods=["PATCH"])
     @swagger_auto_schema(
         request_body=LoanUpdateSerializer,  # Usar el serializer de actualización
-        responses={status.HTTP_200_OK: LoanSerializer()},  # Puedes ajustar según tus necesidades
+        responses={
+            status.HTTP_200_OK: LoanSerializer()
+        },  # Puedes ajustar según tus necesidades
     )
     def partial_update(self, request, pk=None):
         """
@@ -59,9 +61,11 @@ class LoanViewSet(viewsets.ModelViewSet):
 
         # Retornar el objeto Loan actualizado utilizando el serializer original
         updated_loan = Loan.objects.get(pk=pk)  # Obtener la instancia actualizada
-        updated_serializer = LoanSerializer(updated_loan)  # Utilizar el serializer original
+        updated_serializer = LoanSerializer(
+            updated_loan
+        )  # Utilizar el serializer original
         response_data = {
-            'message': 'Actualización parcial exitosa',
-            'data': updated_serializer.data
+            "message": "Actualización parcial exitosa",
+            "data": updated_serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)

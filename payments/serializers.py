@@ -7,11 +7,17 @@ from .validators import validate_payment_amount
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = PaymentDetail
-        fields = ['external_id', 'customer_external_id', 'loan_external_id','payment_date', 'status', 'total_amount', 'payment_amount']
-
+        fields = [
+            "external_id",
+            "customer_external_id",
+            "loan_external_id",
+            "payment_date",
+            "status",
+            "total_amount",
+            "payment_amount",
+        ]
 
 
 class PaymentDetailSerializer(serializers.Serializer):
@@ -23,8 +29,7 @@ class PaymentDetailSerializer(serializers.Serializer):
         return PaymentDetail.objects.create(**validated_data)
 
 
-
 class PaymentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['status']
+        fields = ["status"]

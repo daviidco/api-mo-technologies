@@ -22,6 +22,7 @@ class Loan(models.Model):
     4: "paid" (pagado) - una vez que el préstamo ha sido completamente pagado y el valor
     de "outstanding" sea 0, se debe cambiar el estado a "paid".
     """
+
     STATUS_PENDING = 1
     STATUS_ACTIVE = 2
     STATUS_REJECTED = 3
@@ -43,7 +44,9 @@ class Loan(models.Model):
     contract_version = models.CharField(max_length=30)
     maximum_payment_date = models.DateTimeField()
     taken_at = models.DateTimeField(null=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='loans')
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name="loans"
+    )
     outstanding = models.DecimalField(max_digits=12, decimal_places=2)
 
     @property
@@ -58,8 +61,12 @@ class Loan(models.Model):
         loan_amount_sum = self.amount
 
         # Sumar el monto total de los pagos relacionados al préstamo
-        payment_amount_sum = self.paymentdetail_set.filter(payment__status=1).aggregate(Sum('amount'))[
-                                 'amount__sum'] or 0
+        payment_amount_sum = (
+            self.paymentdetail_set.filter(payment__status=1).aggregate(Sum("amount"))[
+                "amount__sum"
+            ]
+            or 0
+        )
 
         # Calcular el monto pendiente restando los pagos del préstamo
         outstanding = loan_amount_sum - payment_amount_sum
@@ -74,14 +81,16 @@ class Loan(models.Model):
         max_amount_loan = self.customer.score - total_outstanding
         if self.amount > max_amount_loan:
             max_amount_loan_formater = "{:,.2f}".format(abs(max_amount_loan))
-            raise CustomAPIException(detail=f'El monto del prestamo excede el cupo. ${max_amount_loan_formater}')
+            raise CustomAPIException(
+                detail=f"El monto del prestamo excede el cupo. ${max_amount_loan_formater}"
+            )
 
         if not self.external_id and not self.id:
             # Generar un nuevo external_id solo si no se proporciona
             last_loan = self.customer.loans.count()
             last_number = last_loan + 1
-            customer_number = self.customer.external_id.split('_')[1]
-            self.external_id = f'external_{customer_number}_{last_number:02}'
+            customer_number = self.customer.external_id.split("_")[1]
+            self.external_id = f"external_{customer_number}_{last_number:02}"
 
         super().save(*args, **kwargs)
 
@@ -89,7 +98,7 @@ class Loan(models.Model):
 @receiver(post_save, sender=Loan)
 def update_taken_at(sender, instance, **kwargs):
     # Evitar la recursión para el caso específico de 'taken_at'
-    if 'update_taken_at' in kwargs:
+    if "update_taken_at" in kwargs:
         return
 
     # Desconectar temporalmente la señal para evitar el bucle de recursión

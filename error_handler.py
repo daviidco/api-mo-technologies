@@ -4,4 +4,4 @@ from rest_framework.exceptions import APIException
 
 class CustomAPIException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'Error personalizado'
+    default_detail = "Error personalizado"
