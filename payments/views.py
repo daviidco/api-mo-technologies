@@ -15,6 +15,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
 
     def list(self, request, pk=None):
+        """
+        Endpoint to list payments by customer's id
+        """
         # Obtener todos los préstamos para un cliente específico
         payments = Payment.objects.filter(customer_id=pk)
         serializer = self.get_serializer(payments, many=True)
@@ -25,18 +28,31 @@ class PaymentViewSet(viewsets.ModelViewSet):
         request_body=PaymentDetailSerializer(many=True),  # Usar el serializer de actualización
         responses={status.HTTP_201_CREATED: PaymentSerializer()},  # Puedes ajustar según tus necesidades
     )
+
+    def validate_payment_amount_vs_lound_amount(self, payment, loan_instance):
+        if loan_instance.status == Loan.STATUS_PAID:
+            raise CustomAPIException(detail=f'El prestamo {loan_instance.id} ya está pagado')
+        if float(payment.get('amount')) > loan_instance.outstanding:
+            raise CustomAPIException(detail=f'El monto a pagar supera la deuda del prestamo {loan_instance.id}')
+
+
     def create(self, request, pk=None):
+        """
+        Endpoint to create payment
+        """
         # Verificar si los datos son una lista
         is_list_data = isinstance(request.data, list)
         total_amount = sum(int(payment['amount']) for payment in request.data)
 
         for payment in request.data:
-            # loand = Customer.objects.get(id=payment.loan_id)
-            # Crear primero la instancia de Payment
             try:
-                Loan.objects.get(id=payment.get('loan_id'))
+                loan_instance = Loan.objects.get(id=payment.get('loan_id'))
             except Loan.DoesNotExist:
                 raise CustomAPIException(detail='"Loan not found"')
+
+            self.validate_payment_amount_vs_lound_amount(payment, loan_instance)
+
+            # Crear la instancia de Payment
             payment_instance = Payment.objects.create(
                 total_amount = total_amount,
                 customer=Customer.objects.get(id=pk)
@@ -63,21 +79,22 @@ class PaymentViewSet(viewsets.ModelViewSet):
         responses={status.HTTP_200_OK: PaymentSerializer()},  # Puedes ajustar según tus necesidades
     )
     def partial_update(self, request, pk=None):
-        # pk es el ID del Loan que se actualizará parcialmente
+        """
+        Endpoint to patch payment's status
+        """
+        # Obtener la instancia del Payment que se actualizará
+        payment = Payment.objects.get(id=pk)
 
-        # Obtener la instancia del Loan que se actualizará
-        loan = self.get_object()
-
-        # Crear una instancia de LoanUpdateSerializer con la instancia existente y los datos del request
-        serializer = PaymentUpdateSerializer(loan, data=request.data, partial=True)
+        # Crear una instancia de PaymentUpdateSerializer con la instancia existente y los datos del request
+        serializer = PaymentUpdateSerializer(payment, data=request.data, partial=True)
 
         # Validar y guardar la actualización
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Retornar el objeto Loan actualizado utilizando el serializer original
-        updated_loan = Loan.objects.get(pk=pk)  # Obtener la instancia actualizada
-        updated_serializer = PaymentSerializer(updated_loan)  # Utilizar el serializer original
+        # Retornar el objeto Payment actualizado utilizando el serializer original
+        updated_payment = Payment.objects.get(pk=pk)  # Obtener la instancia actualizada
+        updated_serializer = PaymentSerializer(updated_payment)  # Utilizar el serializer original
         response_data = {
             'message': 'Actualización parcial exitosa',
             'data': updated_serializer.data

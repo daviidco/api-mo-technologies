@@ -1,7 +1,6 @@
 
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from customers.models import Customer
@@ -25,7 +24,7 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     external_id = models.CharField(max_length=60, unique=True)
     total_amount = models.DecimalField(max_digits=20, decimal_places=10)
-    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=STATUS_COMPLETED)
+    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=STATUS_COMPLETED, editable=True)
     paid_at = models.DateTimeField(auto_now_add=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments')
 
@@ -34,11 +33,15 @@ class Payment(models.Model):
         if not self.customer.loans.filter(status=2).exists():
             raise CustomAPIException(detail='El cliente no tiene préstamos activos.')
 
-        # Validar que el pago no exceda el monto de la deuda
-        # total_outstanding = self.customer.loans.filter(status=2).aggregate(Sum('outstanding'))['outstanding__sum'] or 0
+        # Validar que el pago no exceda el monto de la deuda total
         total_outstanding = get_total_outstanding(self.customer)
         if self.total_amount > total_outstanding:
             raise CustomAPIException(detail='El monto del pago excede la deuda del cliente.')
+
+        # Validar que el pago no exceda el monto del prestamo
+        # total_outstanding = get_total_outstanding(self.customer)
+        # if self.total_amount > total_outstanding:
+        #     raise CustomAPIException(detail='El monto del pago excede la deuda del cliente.')
 
         if not self.external_id and not self.id:
             # Generar un nuevo external_id solo si no se proporciona
@@ -87,12 +90,14 @@ class PaymentDetail(models.Model):
     def payment_amount(self):
         return self.amount
 
-@receiver(post_save, sender=PaymentDetail)
-def hadle_check_(sender, instance, **kwargs):
+@receiver(pre_save, sender=PaymentDetail)
+def handle_check_(sender, instance, **kwargs):
+    future_outstanding = instance.loan.outstanding - instance.amount
     # Actualizar el estado a "paid" si 'outstanding' llega a 0
-    if instance.loan.outstanding == 0:
+    if future_outstanding == 0:
         instance.loan.status = Loan.STATUS_PAID
-        instance.loan.save(update_outstanding=False)
+    instance.loan.outstanding = future_outstanding
+    instance.loan.save()
 
 
 # Extra
@@ -100,10 +105,10 @@ def hadle_check_(sender, instance, **kwargs):
 def handle_rejected_payment(sender, instance, **kwargs):
     if instance.status == Payment.STATUS_REJECTED:
         # Obtener los detalles de préstamos asociados al pago rechazado
-        loan_details = instance.loan_details.all()
+        payment_details = instance.paymentdetail_set.all()
 
-        for detail in loan_details:
+        for detail in payment_details:
             # Actualizar el 'outstanding' del préstamo
-            detail.loan.outstanding += detail.amount_paid
+            detail.loan.outstanding += detail.amount
             detail.loan.status = Loan.STATUS_ACTIVE  # Opcional: cambiar el estado a "active"
             detail.loan.save()

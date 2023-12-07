@@ -51,7 +51,6 @@ class Loan(models.Model):
         return self.customer.external_id
 
     def calculate_outstanding(self):
-        # loan_amount_sum = self.customer.loans.filter(status=2).aggregate(Sum('amount'))['amount__sum'] or 0
         # Sumar el monto total de los préstamos
         if not self.pk:
             return self.amount
@@ -85,21 +84,6 @@ class Loan(models.Model):
             self.external_id = f'external_{customer_number}_{last_number:02}'
 
         super().save(*args, **kwargs)
-
-
-# Definir una función que maneje la señal post_save
-# @receiver(post_save, sender=Loan)
-# def update_outstanding_loan(sender, instance, **kwargs):
-#         # Obtener todos los préstamos del cliente y actualizar el campo 'outstanding'
-#         customer_loans = instance.customer.loans.all()
-#         for loan in customer_loans:
-#             # Desconectar temporalmente la señal para evitar el ciclo infinito
-#             post_save.disconnect(update_outstanding_loan, sender=Loan)
-#             loan.outstanding = loan.calculate_outstanding()
-#             loan.save()
-#             # Volver a conectar la señal después de la actualización
-#             post_save.connect(update_outstanding_loan, sender=Loan)
-
 
 
 @receiver(post_save, sender=Loan)

@@ -47,8 +47,6 @@ class LoanViewSet(viewsets.ModelViewSet):
         """
         Endpoint to patch loan's status
         """
-        # pk es el ID del Loan que se actualizará parcialmente
-
         # Obtener la instancia del Loan que se actualizará
         loan = self.get_object()
 

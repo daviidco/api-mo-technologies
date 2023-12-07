@@ -20,6 +20,9 @@ class CustomerListView(generics.ListCreateAPIView):
         return CustomerGetSerializer  # Puedes cambiar esto según tus necesidades
 
     def create(self, request, *args, **kwargs):
+        """
+        Endpoint to list customers
+        """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -41,16 +44,13 @@ class CustomerBalanceView(APIView):
     serializer_class = CustomerBalanceSerializer
 
     def get(self, request, *args, **kwargs):
+        """
+        Endpoint to get customer's balance
+        """
         try:
             customer = Customer.objects.get(pk=kwargs['pk'])
         except Customer.DoesNotExist:
             raise CustomAPIException(detail='"Customer not found"')
-
-        # loans_outstanding = Loan.objects.filter(customer_id=customer, status__in=[2]).values_list('outstanding', flat=True)
-        # total_debt = sum(loans_outstanding)
-        # loans_outstanding = Loan.objects.filter(customer_id=customer, status__in=[2]).values_list('outstanding',
-        # total_debt = loans_outstanding
-        # available_amount = customer.score - total_debt
 
         serializer = CustomerBalanceSerializer({
             'external_id': customer.external_id,

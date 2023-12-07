@@ -29,12 +29,6 @@ class Customer(models.Model):
         return total_debt
     @property
     def available_amount(self):
-        # total_debt = self.loans()
-        # loans_outstanding = Loan.objects.filter(customer_id=customer, status__in=[2]).values_list('outstanding',
-        #                                                                                           flat=True)
-        # total_debt = sum(loans_outstanding)
-        # loans_outstanding = Loan.objects.filter(customer_id=customer, status__in=[2]).values_list('outstanding',
-        # total_debt = loans_outstanding
         available_amount = self.score - self.total_debt
         return available_amount
 
